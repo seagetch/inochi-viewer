@@ -26,8 +26,10 @@ private {
     void applyToAxis(string name, int axis, float val, bool inverse = false) {
         try {
             Parameter param = params[name];
-            if (axis == 0) param.value.x = clamp(inverse ? val*-1 : val, param.min.x, param.max.x);
-            if (axis == 1) param.value.y = clamp(inverse ? val*-1 : val, param.min.y, param.max.y);
+            auto delta = deltaTime();
+            float speed = 4;
+            if (axis == 0) param.value.x = dampen(param.value.x, clamp(inverse? -val:val, param.min.x, param.max.x), delta, speed);
+            if (axis == 1) param.value.y = dampen(param.value.y, clamp(inverse? -val:val, param.min.y, param.max.y), delta, speed);
         } catch (RangeError e) {};
     }
 }
@@ -194,8 +196,8 @@ void invUpdateOSF(float[string] blendShapes, Bone[string] bones) {
         applyToAxis("Head Yaw-Pitch", 0, headYaw);
         applyToAxis("Head Yaw-Pitch", 1, headPitch);
 
-        applyToAxis("Eye L Blink", 0, (1 - blendShapes["EyeOpenLeft"]) / 0.3);
-        applyToAxis("Eye R Blink", 0, (1 - blendShapes["EyeOpenRight"]) / 0.3);
+        applyToAxis("Eye L Blink", 0, (0.9 - blendShapes["EyeOpenLeft"]) / 0.5);
+        applyToAxis("Eye R Blink", 0, (0.9 - blendShapes["EyeOpenRight"]) / 0.5);
         applyToAxis("Mouth Shape", 1, blendShapes["mouthOpen"] * 0.1);
 
         applyToAxis("Head Roll", 0, headRoll);
