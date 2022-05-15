@@ -1,4 +1,7 @@
-# Inochi2D Viewer
+# Inochi2D Viewer (with FaceTracking edition)
+
+This is a derived version of Inochi Viewer (https://github.com/Inochi2D/inochi-viewer).
+Goal is to test my model with face tracking softwares, and may be the example to work with Inochi2D libraries.
 
 A small tool to view Inochi2D puppets.
 Go to the Releases section to download a precompiled version
