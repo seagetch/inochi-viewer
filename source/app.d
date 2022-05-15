@@ -5,6 +5,7 @@ import inochi2d;
 import std.string;
 import inochi2d.core.dbg;
 import std.process;
+import adaptor;
 
 extern(C) void fbResizeCallback(GLFWwindow* window, int width, int height) nothrow {
 	inSetViewport(width, height);
@@ -68,10 +69,11 @@ void main(string[] args)
 
 	Puppet[] puppets;
 
-	float size = (args.length-1)*2048;
+	float size = 2048;
 	float halfway = size/2;
 
-	foreach(i; 1..args.length) {
+//	foreach(i; 1..args.length) {
+		auto i = 1;
 		puppets ~= inLoadPuppet(args[i]);
 		puppets[i-1].root.localTransform.translation.x = (((i)*2048)-halfway)-1024;
 
@@ -84,6 +86,11 @@ void main(string[] args)
 			meta.rigger,
 			meta.copyright
 		);
+//	}
+	auto mode = args[2];
+	auto address = "127.0.0.1";
+	if (args.length > 3) {
+		address = args[3];
 	}
 	
 	if (environment.get("DEBUG") == "1") {
@@ -92,6 +99,26 @@ void main(string[] args)
 		inDbgDrawMeshOrientation = true;
 	}
 
+	string[string] options = ["appName": "inochi-viewer"];
+	switch (mode) {
+		case TrackingMode.VMC:
+			break;
+
+		case TrackingMode.VTS: // VTubeStudio
+			options["phoneIP"] = address;
+			invStartAdaptor(TrackingMode.VTS, options);
+			break;
+
+		case TrackingMode.OSF: //  OpenSeeFace
+			invStartAdaptor(TrackingMode.OSF, options);
+			break;
+
+		default:
+			break;
+	}
+
+	invSetPuppet(puppets[0]);
+	invSetAutomator();
 	while(!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -101,7 +128,7 @@ void main(string[] args)
 		inBeginScene();
 
 			updateCamera();
-
+			invUpdate();
 			foreach(puppet; puppets) {
 				puppet.update();
 				puppet.draw();
@@ -119,6 +146,8 @@ void main(string[] args)
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	invStopAdaptor();
 }
 
 bool moving;
