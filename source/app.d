@@ -3,6 +3,7 @@ import bindbc.glfw;
 import bindbc.opengl;
 import inochi2d;
 import std.string;
+import std.range;
 import inochi2d.core.dbg;
 import std.process;
 import adaptor;
@@ -72,9 +73,11 @@ void main(string[] args)
 	float size = 2048;
 	float halfway = size/2;
 
+	args.popFront();
+
 //	foreach(i; 1..args.length) {
 		auto i = 1;
-		puppets ~= inLoadPuppet(args[i]);
+		puppets ~= inLoadPuppet(args[i-1]);
 		puppets[i-1].root.localTransform.translation.x = (((i)*2048)-halfway)-1024;
 
 		import std.array : join;
@@ -87,11 +90,56 @@ void main(string[] args)
 			meta.copyright
 		);
 //	}
-	auto mode = args[2];
-	auto address = "127.0.0.1";
-	if (args.length > 3) {
-		address = args[3];
+
+	args.popFront();
+	writeln("args=", args);
+	TrackingMode defaultMode = TrackingMode.None;
+	while (args.length > 0) {
+		auto mode = cast(TrackingMode)args[0];
+		writeln("mode=", mode);
+		args.popFront();
+		string[string] options = ["appName": "inochi-viewer"];
+		switch (mode) {
+			case TrackingMode.VMC:
+				break;
+
+			case TrackingMode.VTS: // VTubeStudio
+				auto address = "127.0.0.1";
+				if (args.length > 0) {
+					address = args[0];
+					args.popFront();
+				}
+				options["phoneIP"] = address;
+				invStartAdaptor(TrackingMode.VTS, options);
+				if (defaultMode == TrackingMode.None) {
+					defaultMode = mode;
+					invSetDefaultMode(mode);
+				}
+				break;
+
+			case TrackingMode.OSF: //  OpenSeeFace
+				invStartAdaptor(TrackingMode.OSF, options);
+				if (defaultMode == TrackingMode.None) {
+					defaultMode = mode;
+					invSetDefaultMode(mode);					
+				}
+				break;
+
+			case TrackingMode.JML: //  JinsMemeLogger
+				invStartAdaptor(TrackingMode.JML, options);
+				if (defaultMode == TrackingMode.None) {
+					defaultMode = mode;
+					invSetDefaultMode(mode);
+				}
+				break;
+
+			default:
+				break;
+		}
 	}
+
+	TrackingMode[string] modeMap = ["Eye L Blink": TrackingMode.VTS, "Eye R Blink": TrackingMode.VTS];
+	invSetTrackingModeMap(modeMap);
 	
 	if (environment.get("DEBUG") == "1") {
 		inDbgDrawMeshOutlines = true;
@@ -99,27 +147,11 @@ void main(string[] args)
 		inDbgDrawMeshOrientation = true;
 	}
 
-	string[string] options = ["appName": "inochi-viewer"];
-	switch (mode) {
-		case TrackingMode.VMC:
-			break;
-
-		case TrackingMode.VTS: // VTubeStudio
-			options["phoneIP"] = address;
-			invStartAdaptor(TrackingMode.VTS, options);
-			break;
-
-		case TrackingMode.OSF: //  OpenSeeFace
-			invStartAdaptor(TrackingMode.OSF, options);
-			break;
-
-		default:
-			break;
-	}
-
 	invSetPuppet(puppets[0]);
-	invSetAutomator();
+	invSetAutomator();        
+	
 	while(!glfwWindowShouldClose(window)) {
+//		glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Update Inochi2D
@@ -147,7 +179,7 @@ void main(string[] args)
 		glfwPollEvents();
 	}
 
-	invStopAdaptor();
+	invStopAdaptors();
 }
 
 bool moving;
